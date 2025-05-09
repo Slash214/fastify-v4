@@ -1,0 +1,29 @@
+{
+    "name": "fastify-v4",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "@fastify/cors": "^11.0.1",
+        "@fastify/helmet": "^13.0.1",
+        "@fastify/rate-limit": "^10.2.2",
+        "dotenv": "^16.5.0",
+        "fastify": "^5.3.2",
+        "fastify-plugin": "^5.0.1",
+        "mysql2": "^3.14.1",
+        "nodemon": "^3.1.10",
+        "sequelize": "^6.37.7"
+    },
+    "devDependencies": {
+        "pino-pretty": "^13.0.0"
+    }
+}
