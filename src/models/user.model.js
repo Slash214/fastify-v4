@@ -1,27 +1,31 @@
+// models/user.model.js
 module.exports = (sequelize, DataTypes) => {
-    const User = sequelize.define(
-        'User',
-        {
-            id: {
-                type: DataTypes.INTEGER.UNSIGNED,
-                primaryKey: true,
-                autoIncrement: true,
-            },
-            name: {
-                type: DataTypes.STRING(100),
-                allowNull: false,
-            },
-            email: {
-                type: DataTypes.STRING(150),
-                allowNull: false,
-                unique: true,
-            },
+    const User = sequelize.define('User', {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
         },
-        {
-            tableName: 'users',
-            timestamps: true,
-        }
-    )
+        username: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        email: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+        },
+        password: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+    })
+
+    // 如果有关联关系，可以在此定义
+    // User.associate = (models) => {
+    //   // 例如：User.hasMany(models.Post);
+    // };
 
     return User
 }

@@ -1,10 +1,10 @@
-// src/plugins/sequelize.js
+// plugins/01-db.js
 const fp = require('fastify-plugin')
 const { Sequelize, DataTypes } = require('sequelize')
 const { db: dbConfig } = require('../config')
 const { loadModules } = require('../utils/loader')
 
-module.exports = fp(async function (fastify, opts) {
+module.exports = fp(async (fastify) => {
     const sequelize = new Sequelize({
         host: dbConfig.host,
         port: dbConfig.port,
@@ -24,12 +24,12 @@ module.exports = fp(async function (fastify, opts) {
         models[name] = define(sequelize, DataTypes)
     })
     Object.values(models).forEach((m) => m.associate?.(models))
-    await sequelize.sync({ alter: true })
+    await sequelize.sync()
 
-    // ←───① 把 db 挂在实例上
+    // 将 db 挂载到 Fastify 实例上
     fastify.decorate('db', { sequelize, models })
 
-    // ←───② 为每个 request 挂上 db
+    // 为每个请求挂载 db
     fastify.decorateRequest('db', null)
     fastify.addHook('onRequest', (request, reply, done) => {
         request.db = fastify.db

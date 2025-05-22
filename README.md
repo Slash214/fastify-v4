@@ -1,29 +1,26 @@
 # Fastify V4 Boilerplate
 
-这是一个基于 **Fastify v4** + **Sequelize(MySQL)** 的后台服务模板，适用于个人项目和小型企业后台接口开发。模板已经集成：
+这是一个基于 **Fastify v4** + **Sequelize(MySQL)** 的后台服务模板，适用于个人项目和小型企业后台 API 开发。模板已经集成：
 
--   Fastify 核心
--   MySQL 数据库连接（Sequelize ORM）
+-   Fastify v4 核心
+-   MySQL 数据库连接 (通过 Sequelize ORM)
 -   动态加载模型与路由
--   CORS 支持 (`@fastify/cors`)
--   全局统一响应格式
+-   JWT 身份验证 (通过 @fastify/jwt)
+-   Swagger UI + 自动文档 (@fastify/swagger)
+-   CORS 支持 (@fastify/cors)
+-   Helmet HTTP 头部安全配置 (@fastify/helmet)
+-   请求限流 (@fastify/rate-limit)
+-   全局符合格式的 JSON 响应
 -   全局错误处理
 -   404 路由处理
--   日志美化（`pino-pretty`）
--   环境变量管理（`dotenv`）
-
-## 新增功能
-
--   安全防护（`fastify-helmet`）
--   请求限流（`@fastify/rate-limit`）
--   项目结构说明
--   使用示例
+-   日志美化 (pino-pretty)
+-   环境变量管理 (.env)
 
 ---
 
 ## 安装与启动
 
-1. 克隆仓库并安装依赖：
+1. 克隆项目并安装依赖：
 
     ```bash
     git clone <your-repo-url>
@@ -31,14 +28,14 @@
     npm install
     ```
 
-2. 创建并配置数据库：
+2. 创建数据库：
 
     ```sql
     CREATE DATABASE IF NOT EXISTS your_database
       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     ```
 
-3. 在项目根目录创建 `.env` 文件：
+3. 配置环境变量：
 
     ```dotenv
     NODE_ENV=development
@@ -50,10 +47,12 @@
     DB_USER=your_user
     DB_PASS=your_password
 
-    CORS_ORIGIN=*  # 或者指定域名，用逗号分隔
+    JWT_SECRET=your-secure-secret
+
+    CORS_ORIGIN=https://your-frontend.com  # 允许跨域域名
     ```
 
-4. 本地开发启动：
+4. 本地启动：
 
     ```bash
     npm run dev
@@ -65,89 +64,98 @@
     npm start
     ```
 
+6. 访问 API 文档：
+
+    ```url
+    http://localhost:3120/docs
+    ```
+
 ---
 
-## 新增插件配置示例
+## 插件配置示例
 
 ### 安全头 (Helmet)
 
-在 `src/plugins/helmet.js` 中添加：
-
 ```js
+// plugins/02-helmet.js
 const fp = require('fastify-plugin')
-const fastifyHelmet = require('fastify-helmet')
+const helmet = require('@fastify/helmet')
+const { security } = require('../config')
 
 module.exports = fp(async (fastify) => {
-    fastify.register(fastifyHelmet, {
-        contentSecurityPolicy: false, // 根据需求启用/禁用
-    })
+    await fastify.register(helmet, security)
 })
-```
-
-然后在 `src/index.js` 注册：
-
-```js
-fastify.register(require('./plugins/helmet'))
 ```
 
 ### 限流 (Rate Limit)
 
-在 `src/plugins/rate-limit.js` 中添加：
-
 ```js
+// plugins/04-rate-limit.js
 const fp = require('fastify-plugin')
 const rateLimit = require('@fastify/rate-limit')
+const { rateLimit: config } = require('../config')
 
 module.exports = fp(async (fastify) => {
-    fastify.register(rateLimit, {
-        max: 100,
-        timeWindow: '1 minute',
-    })
+    await fastify.register(rateLimit, config)
 })
 ```
 
-并在 `src/index.js` 注册：
+### CORS
 
 ```js
-fastify.register(require('./plugins/rate-limit'))
+// plugins/03-cors.js
+const fp = require('fastify-plugin')
+const cors = require('@fastify/cors')
+const { cors: corsConfig } = require('../config')
+
+module.exports = fp(async (fastify) => {
+    await fastify.register(cors, corsConfig)
+})
 ```
 
 ---
 
-## 项目结构
+## 项目目录
 
 ```
-fastify-v4/
-├── src/
-│   ├── config/           # 配置文件
-│   ├── controllers/      # 控制器
-│   ├── models/           # Sequelize 模型
-│   ├── plugins/          # Fastify 插件 (DB, CORS, Helmet, RateLimit, …)
-│   ├── routes/           # 路由定义
-│   ├── utils/            # 公共工具 (loader.js)
-│   ├── 404.js            # 全局 404 处理
-│   └── index.js          # 应用入口
-├── .env                  # 环境变量
-├── package.json
-└── README.md
+src/
+├── index.js              // 应用入口
+├── config/               // 配置文件 (.env -> config)
+├── plugins/              // Fastify 插件
+│   ├── 01-sequelize.js   // ORM 数据库连接
+│   ├── 02-helmet.js      // 安全头插件
+│   ├── 03-cors.js        // 跨域配置
+│   ├── 04-rate-limit.js  // 请求限流
+│   ├── 05-schema-loader.js
+│   ├── 06-jwt.js         // JWT 身份验证
+├── controllers/          // 控制器层
+├── services/             // 业务逻辑
+├── routes/               // 路由分组
+├── models/               // Sequelize 模型
+├── schemas/              // JSON Schema 验证
+├── utils/                // 工具函数
+└── response.js           // 全局响应格式
 ```
 
 ---
 
-## 使用指南
+## 开发指南
 
-1. **新增模型**：在 `src/models` 下创建 `xxx.model.js`，并定义 `associate` 方法（如有）。
-2. **新增路由**：在 `src/routes` 下创建 `xxx.routes.js`，导出路由函数。
-3. **业务开发**：在 `src/controllers` 下编写对应控制器以实现具体逻辑。
-4. **统一响应**：在控制器中通过 `reply.send(...)` 返回数据，插件会自动包装 `{ code, message, data }`。
+1. 新增模型：`/models/*.model.js` 中定义数据库模型
+2. 新增路由：`/routes/*.routes.js` 中定义接口定义
+3. 统一响应：所有 `reply.send(data)` 都会被格式化为 `{ code, message, data }`
+4. JWT 验证：在需要验证的路由中使用 `preHandler: [fastify.authenticate]`
+5. Swagger 文档：默认启用 `/docs` 路由，支持 tags + 接口模型
 
 ---
 
-## 后续优化
+## 后续可选扩展
+-   配置化 RBAC (角色執行权限)
+-   OAuth2/三方登录组件
+-   使用 Sequelize 迁移 CLI + Umzug 管理数据表
+-   Jest 自动化接口测试
+-   Docker 化部署 & CI/CD
 
--   使用迁移工具管理数据库 schema（如 Sequelize CLI + Umzug）
--   集成接口文档（`fastify-swagger`）
--   增加身份认证与权限管理
--   配置 CI/CD，自动化测试与部署
+---
 
-欢迎 Star ⭐ 并在此基础上自由扩展！
+欢迎 Star 以支持我们，并可在此基础上自由扩展！
